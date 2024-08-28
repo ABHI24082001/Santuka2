@@ -28,6 +28,7 @@
     "react-native-data-table": "^0.2.2",
     "react-native-device-info": "^11.1.0",
     "react-native-device-number": "^1.0.9",
+    "react-native-element-dropdown": "^2.12.1",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "^2.13.1",
     "react-native-html-to-pdf": "^0.12.0",

@@ -6385,6 +6385,13 @@ react-native-device-number@^1.0.9:
   resolved "https://registry.yarnpkg.com/react-native-device-number/-/react-native-device-number-1.0.9.tgz#a3fe209a0ff236fcf4f26a68afad2af779a82cfd"
   integrity sha512-Fnz9zE41fhIP4upMUN8/BdfGTwQ66uiYf3opieWUyv0KbZ44aeUldQmjWSlltS98CHBDrI1t8KIN3t+VvnhAWA==
 
+react-native-element-dropdown@^2.12.1:
+  version "2.12.1"
+  resolved "https://registry.yarnpkg.com/react-native-element-dropdown/-/react-native-element-dropdown-2.12.1.tgz#a2b75b3ac6677fee401d292c10484e8e47aa1db7"
+  integrity sha512-Z3uWNFBoezDEsy9AZJxoDc9DxoAdfeprUjaInmbuzYOk6R0Y0UZ659JIalX20XNvrNRWJUfSZwbM94jWYNsIyw==
+  dependencies:
+    lodash "^4.17.21"
+
 react-native-fs@^2.20.0:
   version "2.20.0"
   resolved "https://registry.yarnpkg.com/react-native-fs/-/react-native-fs-2.20.0.tgz#05a9362b473bfc0910772c0acbb73a78dbc810f6"

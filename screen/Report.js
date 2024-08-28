@@ -15,7 +15,6 @@ import {encode} from 'base-64';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import RNFS from 'react-native-fs';
 
 export default class Report extends Component {
   constructor(props) {
@@ -26,18 +25,14 @@ export default class Report extends Component {
         'SL NO',
         'TruckNo',
         'ChallanNo',
-        // 'TPNo',
         'Loading MT./Pkts',
         'Unloading MT./Pkts',
         'Unloading Date',
         'Cash',
-        // 'E-Adv',
         'Bank',
         'Hsd',
-        // 'Memo No',
         'Pump Name',
         'Remarks',
-
       ],
       widthArr: [
         40, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150,
@@ -63,142 +58,29 @@ export default class Report extends Component {
   }
   componentDidMount() {
     this.loadData();
+    this.fetchJobData();
   }
 
-  // loadData = () => {
-  //   this.serialNumber = 0;
+  fetchJobData = () => {
+    const {jobName, base64Credentials} = this.state;
+    const apiUrl = `https://mis.santukatransport.in/API/Test/GetJobDetails?JobNo=${jobName}`;
 
-  //   const {
-  //     currentPage,
-  //     perPage,
-  //     branchName,
-  //     clientName,
-  //     jobName,
-  //     selectedDate,
-  //     username,
-  //     password,
-  //   } = this.state;
-  //   console.log('branch report', branchName);
-  //   console.log('username report', username);
-  //   console.log('password report', password);
-  //   console.log('clientName', clientName);
-  //   console.log('jobName', jobName);
-  //   console.log('jobName', password);
-  //   const base64Credentials = encode(`${username}:${password}`);
-
-  //   const headers = new Headers({
-  //     Authorization: `Basic ${base64Credentials}`,
-  //     'Content-Type': 'application/json',
-  //   });
-
-  //   const startIndex = (currentPage - 1) * perPage;
-  //   const endIndex = startIndex + perPage;
-  //   const formattedSelectedDate = `${selectedDate.getFullYear()}-${String(
-  //     selectedDate.getMonth() + 1,
-  //   ).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
-
-  //   let apiUrl = `http://mis.santukatransport.in/API/Test/GetBranchDetails?BranchName=${branchName}`;
-
-  //   console.log('branch report', apiUrl);
-
-  //   if (clientName) {
-  //     apiUrl += `&GetClientDetails?ClientName=${clientName}`;
-  //   }
-
-  //   if (jobName) {
-  //     apiUrl += `&GetJobDetails?JobName=${jobName}`;
-  //   }
-  //   if (selectedDate) {
-  //     apiUrl += `&selectedDate=${formattedSelectedDate}`;
-  //   }
-  //   fetch(apiUrl, {
-  //     method: 'GET',
-  //     headers: headers,
-  //   })
-  //     .then(response => response.json())
-  //     .then(data => {
-  //       const filteredData = data.data.filter(row => {
-  //         const originalLoadDate = new Date(row['LoadDate']);
-  //         const selectedDateFormatted = new Date(selectedDate);
-  //         return (
-  //           originalLoadDate.toDateString() ===
-  //           selectedDateFormatted.toDateString()
-  //         );
-  //       });
-  //       // Update the table data with the filtered data
-  //       this.setState({
-  //         tableData: filteredData,
-  //         dataAvailable: filteredData.length > 0,
-  //       });
-  //     })
-  //     .catch(error => {
-  //       console.error('Error fetching data:', error);
-  //       this.setState({dataAvailable: false});
-  //     });
-  // };
-
-  // loadData = () => {
-  //   this.serialNumber = 0;
-  //   const {
-  //     currentPage,
-  //     perPage,
-  //     branchName,
-  //     clientName,
-  //     jobName,
-  //     selectedDate,
-  //     username,
-  //     password,
-  //   } = this.state;
-  // const base64Credentials = encode(`${username}:${password}`);
-
-  // const headers = new Headers({
-  //   Authorization: `Basic ${base64Credentials}`,
-  //   'Content-Type': 'application/json',
-  // });
-
-  // const startIndex = (currentPage - 1) * perPage;
-  // const endIndex = startIndex + perPage;
-  // const formattedSelectedDate = `${selectedDate.getFullYear()}-${String(
-  //   selectedDate.getMonth() + 1,
-  // ).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
-
-  // let apiUrl = `http://mis.santukatransport.in/API/Test/GetBranchDetails?BranchName=${branchName}`;
-
-  // if (clientName) {
-  //   apiUrl += `&GetClientDetails?ClientName=${clientName}`;
-  // }
-
-  // if (jobName) {
-  //   apiUrl += `&GetJobDetails?JobName=${jobName}`;
-  // }
-  // if (selectedDate) {
-  //   apiUrl += `&selectedDate=${formattedSelectedDate}`;
-  // }
-  // fetch(apiUrl, {
-  //   method: 'GET',
-  //   headers: headers,
-  // })
-  //   .then(response => response.json())
-  //   .then(data => {
-  //     const filteredData = data.data.filter(row => {
-  //       const originalLoadDate = new Date(row['LoadDate']);
-  //       const selectedDateFormatted = new Date(selectedDate);
-  //       return (
-  //         originalLoadDate.toDateString() ===
-  //         selectedDateFormatted.toDateString()
-  //       );
-  //     });
-  //     this.setState({
-  //       tableData: filteredData,
-  //       dataAvailable: filteredData.length > 0,
-  //     });
-  //   })
-  //   .catch(error => {
-  //     console.error('Error fetching data:', error);
-  //     this.setState({dataAvailable: false});
-  //   });
-
-  // };
+    fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${base64Credentials}`,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => response.json())
+      .then(data => {
+        this.setState({jobData: data.data});
+        console.log(data, 'response data'); // Log the fetched data instead of response
+      })
+      .catch(error => {
+        console.error('Error fetching job data:', error);
+      });
+  };
 
   loadData = () => {
     this.serialNumber = 0;
@@ -209,155 +91,60 @@ export default class Report extends Component {
       clientName,
       jobName,
       selectedDate,
-      username,
-      password,
+      base64Credentials,
+      jobData,
     } = this.state;
 
-    // Dummy data for testing
-    const dummyData = [
-      {
-        TruckNo: 'ABC123',
-        Challan: '123456',
-        'Loading Qty': '100',
-        'Unloading Qty': '90',
-        'Unloading Date': '2024-06-01',
-        Cash: '500.00',
-        'E-Adv': '50.00',
-        Hsd: '200.00',
-        'Pump Name': 'Pump1',
-        Remarks: 'No remarks',
-      },
-      {
-        TruckNo: 'DEF456',
-        Challan: '654321',
-        'Loading Qty': '120',
-        'Unloading Qty': '110',
-        'Unloading Date': '2024-06-01',
-        Cash: '600.00',
-        'E-Adv': '60.00',
-        Hsd: '220.00',
-        'Pump Name': 'Pump2',
-        Remarks: 'No remarks',
-      },
-      {
-        TruckNo: 'DEF456',
-        Challan: '654321',
-        'Loading Qty': '120',
-        'Unloading Qty': '110',
-        'Unloading Date': '2024-06-01',
-        Cash: '600.00',
-        'E-Adv': '60.00',
-        Hsd: '220.00',
-        'Pump Name': 'Pump2',
-        Remarks: 'No remarks',
-      },
-      {
-        TruckNo: 'DEF456',
-        Challan: '654321',
-        'Loading Qty': '120',
-        'Unloading Qty': '110',
-        'Unloading Date': '2024-06-01',
-        Cash: '600.00',
-        'E-Adv': '60.00',
-        Hsd: '220.00',
-        'Pump Name': 'Pump2',
-        Remarks: 'No remarks',
-      },
-      {
-        TruckNo: 'DEF456',
-        Challan: '654321',
-        'Loading Qty': '120',
-        'Unloading Qty': '110',
-        'Unloading Date': '2024-06-01',
-        Cash: '600.00',
-        'E-Adv': '60.00',
-        Hsd: '220.00',
-        'Pump Name': 'Pump2',
-        Remarks: 'No remarks',
-      },
-      {
-        TruckNo: 'DEF456',
-        Challan: '654321',
-        'Loading Qty': '120',
-        'Unloading Qty': '110',
-        'Unloading Date': '2024-06-01',
-        Cash: '600.00',
-        'E-Adv': '60.00',
-        Hsd: '220.00',
-        'Pump Name': 'Pump2',
-        Remarks: 'No remarks',
-      },
-      {
-        TruckNo: 'DEF456',
-        Challan: '654321',
-        'Loading Qty': '120',
-        'Unloading Qty': '110',
-        'Unloading Date': '2024-06-01',
-        Cash: '600.00',
-        'E-Adv': '60.00',
-        Hsd: '220.00',
-        'Pump Name': 'Pump2',
-        Remarks: 'No remarks',
-      },
-      // Add more dummy rows as needed
-    ];
+    console.log(jobName, 'djkdkj');
 
-    this.setState({
-      tableData: dummyData,
-      dataAvailable: dummyData.length > 0,
+    const headers = new Headers({
+      Authorization: `Basic ${base64Credentials}`, // Use base64Credentials from state
+      'Content-Type': 'application/json',
     });
 
-    // If you want to use the API call and test it as well, uncomment the following:
-    /*
-  const base64Credentials = encode(`${username}:${password}`);
+    const formattedSelectedDate = `${selectedDate.getFullYear()}-${String(
+      selectedDate.getMonth() + 1,
+    ).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
-  const headers = new Headers({
-    Authorization: `Basic ${base64Credentials}`,
-    'Content-Type': 'application/json',
-  });
+    let apiUrl = `http://mis.santukatransport.in/API/Test/GetBranchDetails?BranchName=${branchName}`;
 
-  const startIndex = (currentPage - 1) * perPage;
-  const endIndex = startIndex + perPage;
-  const formattedSelectedDate = `${selectedDate.getFullYear()}-${String(
-    selectedDate.getMonth() + 1,
-  ).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+    if (clientName) {
+      apiUrl += `&GetClientDetails?ClientName=${clientName}`;
+    }
 
-  let apiUrl = `http://mis.santukatransport.in/API/Test/GetBranchDetails?BranchName=${branchName}`;
+    if (jobName && jobData.length > 0) {
+      apiUrl += `&JobId=${jobData[0].JobId}&JobNo=${jobData[0].JobNo}`;
+    }
 
-  if (clientName) {
-    apiUrl += `&GetClientDetails?ClientName=${clientName}`;
-  }
+    if (selectedDate) {
+      apiUrl += `&selectedDate=${formattedSelectedDate}`;
+    }
 
-  if (jobName) {
-    apiUrl += `&GetJobDetails?JobName=${jobName}`;
-  }
-  if (selectedDate) {
-    apiUrl += `&selectedDate=${formattedSelectedDate}`;
-  }
-  fetch(apiUrl, {
-    method: 'GET',
-    headers: headers,
-  })
-    .then(response => response.json())
-    .then(data => {
-      const filteredData = data.data.filter(row => {
-        const originalLoadDate = new Date(row['LoadDate']);
-        const selectedDateFormatted = new Date(selectedDate);
-        return (
-          originalLoadDate.toDateString() ===
-          selectedDateFormatted.toDateString()
-        );
-      });
-      this.setState({
-        tableData: filteredData,
-        dataAvailable: filteredData.length > 0,
-      });
+    fetch(apiUrl, {
+      method: 'GET',
+      headers: headers,
     })
-    .catch(error => {
-      console.error('Error fetching data:', error);
-      this.setState({dataAvailable: false});
-    });
-  */
+      .then(response => response.json())
+      .then(data => {
+        const filteredData = data.data.filter(row => {
+          const originalLoadDate = new Date(row['LoadDate']);
+          const selectedDateFormatted = new Date(selectedDate);
+          const jobNameMatch = row['JobNo'] === jobData[0].JobNo;
+          return (
+            originalLoadDate.toDateString() ===
+              selectedDateFormatted.toDateString() && jobNameMatch
+          );
+        });
+        // Update the table data with the filtered data
+        this.setState({
+          tableData: filteredData,
+          dataAvailable: filteredData.length > 0,
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+        this.setState({dataAvailable: false});
+      });
   };
 
   loadNextPage = () => {
@@ -583,7 +370,6 @@ export default class Report extends Component {
         <Text style={styles.headerText2}>
           NIE Road, Jagatpur, Cuttack- 754021.
         </Text>
-        
         <TextInput
           style={styles.input}
           placeholderTextColor="#9c9c9c"
@@ -596,12 +382,18 @@ export default class Report extends Component {
           placeholder="Clint name"
           onChangeText={clientName => this.setState({clientName})}
         />
+       
         <TextInput
           style={styles.input}
           placeholderTextColor="#9c9c9c"
-          placeholder="Job no"
-          onChangeText={jobName => this.setState({jobName})}
+          placeholder="Job name"
+          onChangeText={jobName => this.setState({jobName}, this.fetchJobData)}
         />
+
+        <Text>{data}ok</Text>
+
+
+
         <TouchableOpacity onPress={this.showDatePicker}>
           <Text style={styles.dateText}>
             Selected Date: {moment(selectedDate).format('DD/MM/YYYY')}
@@ -680,6 +472,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     color: '#000',
   },
+  scrol: {
+    height: 40,
+    borderColor: '#b6ccf2',
+    borderWidth: 2,
+    borderRadius: 7,
+    marginBottom: 10,
+    paddingHorizontal: 8,
+    color: '#000',
+  },
   dateText: {
     fontSize: 16,
     marginBottom: 10,
@@ -688,7 +489,6 @@ const styles = StyleSheet.create({
   data: {
     fontSize: 20,
     color: '#007BFF',
-  
   },
   tableBorder: {
     borderWidth: 1,
@@ -742,10 +542,3 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 });
-
-// The this keyword refers to the object that is executing the current
-// function or method. It allows access to object properties and methods
-//  within the context of that object.
-
-
-// here i want same single table row and seprate colume also fix the ui 
