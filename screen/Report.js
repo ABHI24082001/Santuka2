@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Modal,
+  FlatList
 } from 'react-native';
 import {Table, Row} from 'react-native-table-component';
 import {encode} from 'base-64';
@@ -37,12 +39,14 @@ export default class Report extends Component {
       widthArr: [
         40, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150,
       ],
+      jobData: [],
       tableData: [],
       currentPage: 1,
       perPage: 100,
       branchName: '',
       clientName: '',
       jobName: '',
+      showJobModal: false,
       selectedDate: new Date(),
       dataAvailable: true,
       columnDataMapping: {
@@ -56,31 +60,6 @@ export default class Report extends Component {
     this.handlePrintPDF = this.handlePrintPDF.bind(this);
     this.calculateSum = this.calculateSum.bind(this);
   }
-  componentDidMount() {
-    this.loadData();
-    this.fetchJobData();
-  }
-
-  fetchJobData = () => {
-    const {jobName, base64Credentials} = this.state;
-    const apiUrl = `https://mis.santukatransport.in/API/Test/GetJobDetails?JobNo=${jobName}`;
-
-    fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        Authorization: `Basic ${base64Credentials}`,
-        'Content-Type': 'application/json',
-      },
-    })
-      .then(response => response.json())
-      .then(data => {
-        this.setState({jobData: data.data});
-        console.log(data, 'response data'); // Log the fetched data instead of response
-      })
-      .catch(error => {
-        console.error('Error fetching job data:', error);
-      });
-  };
 
   loadData = () => {
     this.serialNumber = 0;
@@ -355,6 +334,65 @@ export default class Report extends Component {
     this.setState({showDatePicker: true});
   };
 
+  componentDidMount() {
+    this.loadData();
+    this.fetchJobData();
+  }
+
+  fetchJobData = () => {
+    const {jobName, base64Credentials} = this.state;
+    const apiUrl = `https://mis.santukatransport.in/API/Test/GetJobDetails?JobNo=${jobName}`;
+
+    fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${base64Credentials}`,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => response.json())
+      .then(data => {
+        this.setState({jobData: data.data});
+        console.log(data, 'response data'); // Log the fetched data instead of response
+      })
+      .catch(error => {
+        console.error('Error fetching job data:', error);
+      });
+  };
+
+  handleJobSelect = job => {
+    this.setState({selectedJob: job, showJobModal: false});
+  };
+
+  // renderJobList = () => {
+  //   const {jobData} = this.state;
+
+  //   if (!jobData || jobData.length === 0) {
+  //     return null;
+  //   }
+  //   return (
+  //     <View>
+
+  //       <TouchableOpacity>
+  //         {jobData.map((job, index) => (
+  //         <TextInput
+  //           key={index}
+  //           style={styles.input}
+  //           value={job.JobNo}
+  //           onChangeText={text => {
+  //             const updatedJobData = [...jobData];
+  //             updatedJobData[index].JobNo = text;
+  //             this.setState({jobData: updatedJobData});
+  //           }}
+  //         />
+  //       ))}
+
+  //       </TouchableOpacity>
+
+  //     </View>
+  //   );
+  // };
+
   render() {
     const {
       tableHead,
@@ -370,6 +408,7 @@ export default class Report extends Component {
         <Text style={styles.headerText2}>
           NIE Road, Jagatpur, Cuttack- 754021.
         </Text>
+
         <TextInput
           style={styles.input}
           placeholderTextColor="#9c9c9c"
@@ -382,18 +421,92 @@ export default class Report extends Component {
           placeholder="Clint name"
           onChangeText={clientName => this.setState({clientName})}
         />
-       
-        <TextInput
-          style={styles.input}
-          placeholderTextColor="#9c9c9c"
-          placeholder="Job name"
-          onChangeText={jobName => this.setState({jobName}, this.fetchJobData)}
-        />
+        {/* <View style={{flexDirection: 'row'}}>
+          <TouchableOpacity>
+            {this.state.selectedJob ? (
+              <Text style={styles.button}>{this.state.selectedJob}</Text>
+            ) : (
+              <Text style={styles.button}>Input Select Job No</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => this.setState({showJobModal: true})}>
+            <Image source={require('./assets/img.png')} style={styles.icon} />
+          </TouchableOpacity>
+        </View> */}
 
-        <Text>{data}ok</Text>
+        <TouchableOpacity onPress={() => this.setState({showJobModal: true})}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Text style={styles.button}>
+              {this.state.selectedJob
+                ? this.state.selectedJob
+                : 'Select Job No'}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
+        {/* <TouchableOpacity onPress={() => this.setState({showJobModal: true})}>
+          <Image
+            source={require('./assets/password.png')}
+            style={styles.icon}
+          />
+        </TouchableOpacity>
 
+        <TouchableOpacity>
+          <Text style={styles.button}>{this.state.selectedJob}</Text>
+        </TouchableOpacity> */}
 
+        {/* <Modal
+          visible={this.state.showJobModal}
+          animationType="slide"
+          onRequestClose={() => this.setState({showJobModal: false})}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Select Job No</Text>
+            <ScrollView>
+              <FlatList
+                data={this.state.jobData}
+                renderItem={({item}) => (
+                  <TouchableOpacity
+                    onPress={() => this.handleJobSelect(item.JobNo)}>
+                    <Text style={styles.modalItem}>{item.JobNo}</Text>
+                  </TouchableOpacity>
+                )}
+                keyExtractor={item => item.JobNo}
+              />
+            </ScrollView>
+          </View>
+        </Modal> */}
+
+        <Modal
+          visible={this.state.showJobModal}
+          animationType="slide"
+          onRequestClose={() => this.setState({showJobModal: false})}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Select Job No</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search Job No"
+              placeholderTextColor="black"
+              value={this.state.searchText}
+              onChangeText={text => this.setState({searchText: text})}
+            />
+            {this.state.jobData && (
+              <FlatList
+                data={this.state.jobData.filter(item =>
+                  item.JobNo.includes(this.state.searchText),
+                )}
+                renderItem={({item}) => (
+                  <TouchableOpacity
+                    onPress={() => this.handleJobSelect(item.JobNo)}>
+                    <Text style={styles.modalItem}>{item.JobNo}</Text>
+                  </TouchableOpacity>
+                )}
+                keyExtractor={item => item.JobNo}
+              />
+            )}
+          </View>
+        </Modal>
+
+        {/* {this.renderJobList()} */}
         <TouchableOpacity onPress={this.showDatePicker}>
           <Text style={styles.dateText}>
             Selected Date: {moment(selectedDate).format('DD/MM/YYYY')}
@@ -471,6 +584,50 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 8,
     color: '#000',
+  },
+  searchInput: {
+    height: 40,
+    borderColor: '#b6ccf2',
+    borderWidth: 2,
+    borderRadius: 7,
+    marginBottom: 10,
+    paddingHorizontal: 8,
+    backgroundColor: '#fff',
+    color: '#000',
+  },
+  icon: {
+    borderWidth: 0.5,
+    width: 40,
+    height: 40,
+  },
+  modalContainer: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#000',
+  },
+  modalItem: {
+    fontSize: 16,
+    padding: 10,
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
+    color: '#000',
+  },
+  button: {
+    marginTop: -2,
+    fontSize: 16,
+    width: 380,
+    padding: 10,
+    backgroundColor: '#fff',
+    color: '#000',
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: '#b6ccf2',
   },
   scrol: {
     height: 40,
