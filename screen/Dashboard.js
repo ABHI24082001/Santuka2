@@ -35,12 +35,6 @@ const Dashboard = () => {
     fetchDeviceId();
   }, []);
 
-
-  
-
- 
- 
-
   const handleDataPress = () => {
     navigation.navigate('Data', {username, deviceId, password});
   };
@@ -60,6 +54,11 @@ const Dashboard = () => {
   const handleOfflineReportPress = () => {
     navigation.navigate('OfflineReport');
   };
+
+  
+
+
+
 
   return (
     <View style={styles.container}>

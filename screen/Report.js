@@ -17,7 +17,8 @@ import {encode} from 'base-64';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
-
+import CustomDropdown from './components/CustomDropdown';
+import axios from 'axios';
 export default class Report extends Component {
   constructor(props) {
     super(props);
@@ -46,6 +47,15 @@ export default class Report extends Component {
       branchName: '',
       clientName: '',
       jobName: '',
+      base64Credentials: '',
+      inputValue: '',
+      filteredJobs: [],
+      showDropdown: false,
+      searchText: '',
+      input: '',
+      typingTimeout: null,
+      apiData: null,
+      error: null,
       showJobModal: false,
       selectedDate: new Date(),
       dataAvailable: true,
@@ -73,11 +83,8 @@ export default class Report extends Component {
       base64Credentials,
       jobData,
     } = this.state;
-
-    console.log(jobName, 'djkdkj');
-
     const headers = new Headers({
-      Authorization: `Basic ${base64Credentials}`, // Use base64Credentials from state
+      Authorization: `Basic ${base64Credentials}`,
       'Content-Type': 'application/json',
     });
 
@@ -339,59 +346,60 @@ export default class Report extends Component {
     this.fetchJobData();
   }
 
-  fetchJobData = () => {
-    const {jobName, base64Credentials} = this.state;
-    const apiUrl = `https://mis.santukatransport.in/API/Test/GetJobDetails?JobNo=${jobName}`;
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.input !== this.state.input) {
+      if (this.state.input) {
+        this.fetchJobData();
+      }
+    }
+  }
 
+  componentWillUnmount() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+  }
+
+  handleInputChange = input => {
+    console.log('Input changed:', input); // Log the new input value
+    this.setState({input});
+  };
+
+  fetchJobData = () => {
+    const apiUrl = `https://mis.santukatransport.in/API/Test/GetJobDetails?JobNo=${this.state.input}`;
     fetch(apiUrl, {
       method: 'GET',
       headers: {
-        Authorization: `Basic ${base64Credentials}`,
+        Authorization: `Basic ${this.state.base64Credentials}`,
         'Content-Type': 'application/json',
       },
     })
       .then(response => response.json())
       .then(data => {
-        this.setState({jobData: data.data});
-        console.log(data, 'response data'); // Log the fetched data instead of response
+        const jobArray = data?.data.map(job => ({
+          label: job.JobNo,
+          value: job.JobNo,
+        }));
+        this.setState({jobData: jobArray});
+        console.log(jobArray, 'job data');
       })
       .catch(error => {
         console.error('Error fetching job data:', error);
       });
   };
 
-  handleJobSelect = job => {
-    this.setState({selectedJob: job, showJobModal: false});
-  };
-
-  // renderJobList = () => {
-  //   const {jobData} = this.state;
-
-  //   if (!jobData || jobData.length === 0) {
-  //     return null;
-  //   }
-  //   return (
-  //     <View>
-
-  //       <TouchableOpacity>
-  //         {jobData.map((job, index) => (
-  //         <TextInput
-  //           key={index}
-  //           style={styles.input}
-  //           value={job.JobNo}
-  //           onChangeText={text => {
-  //             const updatedJobData = [...jobData];
-  //             updatedJobData[index].JobNo = text;
-  //             this.setState({jobData: updatedJobData});
-  //           }}
-  //         />
-  //       ))}
-
-  //       </TouchableOpacity>
-
-  //     </View>
-  //   );
+  // handleSearch = () => {
+  //   this.setState({jobName: this.state.inputValue});
+  //   this.fetchJobData();
   // };
+
+  handleSearchTextChange = text => {
+    this.setState({searchText: text});
+    const filtered = this.state.jobData.filter(job =>
+      job.label.toLowerCase().includes(text.toLowerCase()),
+    );
+    this.setState({jobData: filtered});
+  };
 
   render() {
     const {
@@ -404,108 +412,19 @@ export default class Report extends Component {
     } = this.state;
     return (
       <View style={styles.container}>
-        <Text style={styles.headerText1}>SANTUKA TRANSPORT</Text>
-        <Text style={styles.headerText2}>
-          NIE Road, Jagatpur, Cuttack- 754021.
-        </Text>
-
-        <TextInput
-          style={styles.input}
-          placeholderTextColor="#9c9c9c"
-          placeholder="Branch"
-          onChangeText={branchName => this.setState({branchName})}
+        <CustomDropdown
+          labelText="Job No"
+          dropData={this.state.jobData}
+          placeholdername="Select Job Number"
+          searchPlaceholdername="Search Job Number in dropdown"
+          // value={this.state.inputValue}
+          // onChangeT={item => this.handleSelectJob(item.value)}
+          showSearch={true}
+          value={this.state.input}
+          onChangeText={this.handleInputChange}
+          // onSelect={selectedJob => this.setState({jobName: selectedJob.value})}
+          dropdownPosition="bottom"
         />
-        <TextInput
-          style={styles.input}
-          placeholderTextColor="#9c9c9c"
-          placeholder="Clint name"
-          onChangeText={clientName => this.setState({clientName})}
-        />
-        {/* <View style={{flexDirection: 'row'}}>
-          <TouchableOpacity>
-            {this.state.selectedJob ? (
-              <Text style={styles.button}>{this.state.selectedJob}</Text>
-            ) : (
-              <Text style={styles.button}>Input Select Job No</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => this.setState({showJobModal: true})}>
-            <Image source={require('./assets/img.png')} style={styles.icon} />
-          </TouchableOpacity>
-        </View> */}
-
-        <TouchableOpacity onPress={() => this.setState({showJobModal: true})}>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Text style={styles.button}>
-              {this.state.selectedJob
-                ? this.state.selectedJob
-                : 'Select Job No'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* <TouchableOpacity onPress={() => this.setState({showJobModal: true})}>
-          <Image
-            source={require('./assets/password.png')}
-            style={styles.icon}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity>
-          <Text style={styles.button}>{this.state.selectedJob}</Text>
-        </TouchableOpacity> */}
-
-        {/* <Modal
-          visible={this.state.showJobModal}
-          animationType="slide"
-          onRequestClose={() => this.setState({showJobModal: false})}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Select Job No</Text>
-            <ScrollView>
-              <FlatList
-                data={this.state.jobData}
-                renderItem={({item}) => (
-                  <TouchableOpacity
-                    onPress={() => this.handleJobSelect(item.JobNo)}>
-                    <Text style={styles.modalItem}>{item.JobNo}</Text>
-                  </TouchableOpacity>
-                )}
-                keyExtractor={item => item.JobNo}
-              />
-            </ScrollView>
-          </View>
-        </Modal> */}
-
-        <Modal
-          visible={this.state.showJobModal}
-          animationType="slide"
-          onRequestClose={() => this.setState({showJobModal: false})}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Select Job No</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Job No"
-              placeholderTextColor="black"
-              value={this.state.searchText}
-              onChangeText={text => this.setState({searchText: text})}
-            />
-            {this.state.jobData && (
-              <FlatList
-                data={this.state.jobData.filter(item =>
-                  item.JobNo.includes(this.state.searchText),
-                )}
-                renderItem={({item}) => (
-                  <TouchableOpacity
-                    onPress={() => this.handleJobSelect(item.JobNo)}>
-                    <Text style={styles.modalItem}>{item.JobNo}</Text>
-                  </TouchableOpacity>
-                )}
-                keyExtractor={item => item.JobNo}
-              />
-            )}
-          </View>
-        </Modal>
-
         {/* {this.renderJobList()} */}
         <TouchableOpacity onPress={this.showDatePicker}>
           <Text style={styles.dateText}>

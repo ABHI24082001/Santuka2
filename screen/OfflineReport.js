@@ -1,14 +1,27 @@
-import React, { Component } from 'react';
-import { StyleSheet, View, ScrollView, Text } from 'react-native';
-import { Table, Row } from 'react-native-table-component';
+import React, {Component} from 'react';
+import {StyleSheet, View, ScrollView, Text} from 'react-native';
+import {Table, Row} from 'react-native-table-component';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default class OfflineReport extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      tableHead: ['Sl No', 'Tp', 'Challan', 'Cash', 'Hsd', 'Upi','UpiId' ,'TruckNo', 'UPIAmt', 'SlipNo', 'CreatedBy', 'CapturedPhoto'],
-      widthArr: [50, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,100, ],
+      tableHead: [
+        'Sl No',
+        'Tp',
+        'Challan',
+        'Cash',
+        'Hsd',
+        'Upi',
+        'UpiId',
+        'TruckNo',
+        'UPIAmt',
+        'SlipNo',
+        'CreatedBy',
+        'CapturedPhoto',
+      ],
+      widthArr: [50, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
       tableData: [],
     };
     this.serialNumber = 0;
@@ -24,16 +37,16 @@ export default class OfflineReport extends Component {
       if (offlineData) {
         const parsedData = JSON.parse(offlineData);
         // Assign serial numbers to each row
-        parsedData.forEach((rowData) => {
+        parsedData.forEach(rowData => {
           this.serialNumber += 1;
           rowData['Sl No'] = this.serialNumber;
         });
-        this.setState({ tableData: parsedData });
+        this.setState({tableData: parsedData});
       }
     } catch (error) {
       console.error('Error loading offline data:', error);
     }
-  }
+  };
 
   render() {
     const state = this.state;
@@ -47,7 +60,12 @@ export default class OfflineReport extends Component {
         <ScrollView horizontal={true}>
           <View>
             <Table borderStyle={{}}>
-              <Row data={state.tableHead} widthArr={state.widthArr} style={styles.header} textStyle={styles.text} />
+              <Row
+                data={state.tableHead}
+                widthArr={state.widthArr}
+                style={styles.header}
+                textStyle={styles.text}
+              />
             </Table>
             <ScrollView style={styles.dataWrapper}>
               {state.tableData.length > 0 ? (
@@ -57,17 +75,23 @@ export default class OfflineReport extends Component {
                       data={state.tableHead.map(header => {
                         // Handle undefined or null values
                         const value = rowData[header];
-                        return value !== undefined && value !== null ? value.toString() : 'NA';
+                        return value !== undefined && value !== null
+                          ? value.toString()
+                          : 'NA';
                       })}
                       widthArr={state.widthArr}
-                      style={[styles.row, index % 2 && { backgroundColor: '#F7F6E7' }]
-                      }
+                      style={[
+                        styles.row,
+                        index % 2 && {backgroundColor: '#F7F6E7'},
+                      ]}
                       textStyle={styles.text}
                     />
                   </Table>
                 ))
               ) : (
-                <Text style={styles.noDataText}>No offline data available.</Text>
+                <Text style={styles.noDataText}>
+                  No offline data available.
+                </Text>
               )}
             </ScrollView>
           </View>
@@ -78,7 +102,7 @@ export default class OfflineReport extends Component {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, paddingTop: 0, backgroundColor: '#fff' },
+  container: {flex: 1, padding: 16, paddingTop: 0, backgroundColor: '#fff'},
   headerContainer: {
     flexDirection: 'column',
     justifyContent: 'center',
@@ -88,15 +112,15 @@ const styles = StyleSheet.create({
   headerText1: {
     fontSize: 20,
     fontWeight: 'bold',
-    color:'black',
+    color: 'black',
   },
   headerText2: {
     fontSize: 16,
-    color:'black',
+    color: 'black',
   },
-  header: { height: 50, backgroundColor: '#537791' },
-  text: { textAlign: 'center', fontWeight: 'bold', color: 'black' },
-  dataWrapper: { marginTop: -1 },
-  row: { height: 150, backgroundColor: '#E7E6E1' },
-  noDataText: { textAlign: 'center', color: 'red', marginTop: 10 },
+  header: {height: 50, backgroundColor: '#537791'},
+  text: {textAlign: 'center', fontWeight: 'bold', color: 'black'},
+  dataWrapper: {marginTop: -1},
+  row: {height: 150, backgroundColor: '#E7E6E1'},
+  noDataText: {textAlign: 'center', color: 'red', marginTop: 10},
 });
