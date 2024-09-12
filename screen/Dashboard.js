@@ -10,7 +10,7 @@ import {
 import {useNavigation, useRoute} from '@react-navigation/native';
 import DeviceInfo from 'react-native-device-info';
 
-// import DeviceNumber from 'react-native-device-number';
+
 
 const Dashboard = () => {
   const navigation = useNavigation();
@@ -57,9 +57,8 @@ const Dashboard = () => {
 
   
 
-
-
-
+ 
+ 
   return (
     <View style={styles.container}>
       <View style={styles.row}>

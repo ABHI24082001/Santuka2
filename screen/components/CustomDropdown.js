@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,8 @@ import {
   TextInput,
   Image,
   TouchableOpacity,
+  FlatList,
 } from 'react-native';
-import {Dropdown} from 'react-native-element-dropdown';
 
 const CustomDropdown = ({
   hasBorder,
@@ -15,28 +15,48 @@ const CustomDropdown = ({
   dropData,
   isend = false,
   placeholdername,
-  searchPlaceholdername,
   value,
-  onChange = () => {}, // Default empty function
   onChangeText,
   editOnPress,
   isEdit = false,
   showSearch = true,
   isMandatory = true,
-  dropdownPosition,
-  onSearchTextChange,
-  searchText,
+  onSelect,
 }) => {
+  const [showDropdown, setShowDropdown] = useState(false); // Manage dropdown visibility
+
+  const handleSelect = item => {
+    if (onSelect && typeof onSelect === 'function') {
+      onSelect(item.value);
+    }
+    setShowDropdown(false); // Hide dropdown after selection
+  };
+
+  const handleInputChange = text => {
+    onChangeText(text); 
+    setShowDropdown(text.length > 0); 
+  };
+
+  
+
+  const renderDropdownItem = ({item}) => (
+    <TouchableOpacity
+      style={styles.dropdownItem}
+      onPress={() => handleSelect(item)}>
+      <Text style={styles.dropdownItemText}>{item.label}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <>
       <Text
         style={{
           alignItems: 'flex-start',
           padding: 5,
-          marginLeft: '5%',
+          marginLeft: '1%',
           color: 'black',
-          fontSize: 13,
-          fontFamily: 'PoppinsMedium',
+          fontSize: 15,
+          fontFamily: 'bold',
         }}>
         {labelText} {isMandatory && <Text style={{color: 'red'}}>*</Text>}
       </Text>
@@ -52,36 +72,19 @@ const CustomDropdown = ({
           alignSelf: 'center',
           marginBottom: isend ? 20 : 5,
         }}>
-        <Dropdown
+        <TextInput
           style={[
-            styles.dropdown,
+            styles.input,
             {
               width: isEdit ? '90%' : '100%',
-              borderWidth: hasBorder ? 0.9 : 0,
-              borderColor: hasBorder ? 'red' : 'transparent',
+              borderWidth: hasBorder ? 1 : 1,
+              borderColor: hasBorder ? 'red' : '#000',
             },
           ]}
-          placeholderStyle={{fontSize: 15, color: '#6c6f73'}}
-          selectedTextStyle={{fontSize: 15, color: '#6c6f73'}}
-          inputSearchStyle={{
-            height: 40,
-            fontSize: 15,
-            color: '#6c6f73',
-          }}
-          itemTextStyle={{color: 'black'}}
-          data={dropData}
-          search={showSearch}
-          maxHeight={'60%'}
-          labelField="label"
-          valueField="value"
           placeholder={placeholdername}
-          searchPlaceholder={searchPlaceholdername}
+          placeholderTextColor="#000"
           value={value}
-          onChange={onChange}
-          onChangeText={onChangeText}
-          dropdownPosition={dropdownPosition}
-          onSearchTextChange={onSearchTextChange}
-          searchText={searchText}
+          onChangeText={handleInputChange} // Handle input changes
         />
         {isEdit && (
           <TouchableOpacity
@@ -99,18 +102,60 @@ const CustomDropdown = ({
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Conditionally render the FlatList */}
+      {showDropdown &&
+        showSearch &&
+        (dropData.length > 0 ? (
+          <FlatList
+            data={dropData}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderDropdownItem}
+            style={styles.dropdownList}
+            keyboardShouldPersistTaps="handled"
+          />
+        ) : (
+          <View style={styles.noDataContainer}>
+            <Text style={styles.noDataText}>No data available</Text>
+          </View>
+        ))}
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  dropdown: {
-    height: 40,
+  dropdownList: {
+    maxHeight: 200,
+    backgroundColor: '#fff',
     borderColor: 'black',
+    borderWidth: 1,
     borderRadius: 8,
-    alignSelf: 'center',
-    backgroundColor: '#D2F3FD',
+  },
+  dropdownItem: {
+    padding: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#ccc', // Changed to visible color
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    color: 'black',
+  },
+  input: {
+    height: 40,
     paddingHorizontal: 15,
+    borderRadius: 8,
+    borderColor: '#000',
+    borderWidth: 2,
+    color: 'black',
+  },
+  noDataContainer: {
+    padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noDataText: {
+    color: 'gray',
+    fontSize: 15,
   },
 });
 

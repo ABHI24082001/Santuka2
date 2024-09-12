@@ -2,23 +2,16 @@ import React, {Component} from 'react';
 import {
   StyleSheet,
   View,
-  ScrollView,
-  Text,
-  TextInput,
-  Button,
   TouchableOpacity,
-  Image,
-  Alert,
-  Modal,
-  FlatList
+  Text,
+  Button,
+  ScrollView,
 } from 'react-native';
-import {Table, Row} from 'react-native-table-component';
-import {encode} from 'base-64';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import moment from 'moment';
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import CustomDropdown from './components/CustomDropdown';
-import axios from 'axios';
+import moment from 'moment';
+import {encode} from 'base-64';
+import {Table, Row} from 'react-native-table-component';
+import DateTimePicker from '@react-native-community/datetimepicker';
 export default class Report extends Component {
   constructor(props) {
     super(props);
@@ -40,25 +33,22 @@ export default class Report extends Component {
       widthArr: [
         40, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150,
       ],
-      jobData: [],
-      tableData: [],
       currentPage: 1,
       perPage: 100,
+      jobData: [],
+      branchData: [],
+      clintData: [],
+      tableData: [],
+      jobName: '',
       branchName: '',
       clientName: '',
-      jobName: '',
+      selectedDate: new Date(),
       base64Credentials: '',
-      inputValue: '',
-      filteredJobs: [],
       showDropdown: false,
       searchText: '',
       input: '',
-      typingTimeout: null,
-      apiData: null,
-      error: null,
-      showJobModal: false,
-      selectedDate: new Date(),
-      dataAvailable: true,
+      branchInput: '',
+      clintInput: '',
       columnDataMapping: {
         'Loading Qty': 'NetWT',
       },
@@ -66,9 +56,114 @@ export default class Report extends Component {
       password: route.params?.password || '',
       showDatePicker: false,
     };
+    this.debounceTimeout = null;
     this.serialNumber = 0;
     this.handlePrintPDF = this.handlePrintPDF.bind(this);
     this.calculateSum = this.calculateSum.bind(this);
+  }
+
+  fetchClintData = () => {
+    const apiUrl = `https://mis.santukatransport.in/API/Test/GetClientDetails?ClinetName=${this.state.clintInput}`;
+    fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${this.state.base64Credentials}`,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => response.json())
+      .then(data => {
+        const clintArray = data?.data.map(clint => ({
+          label: clint.label,
+          value: clint.value,
+        }));
+
+        console.log(response, 'wkkwk');
+        this.setState({clintData: clintArray});
+      })
+      .catch(error => console.error('Error fetching branch data:', error));
+  };
+
+  fetchBranchData = () => {
+    const apiUrl = `https://mis.santukatransport.in/API/Test/GetBranchDetails?BranchName=${this.state.branchInput}`;
+    fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${this.state.base64Credentials}`,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => response.json())
+      .then(data => {
+        const branchArray = data?.data.map(branch => ({
+          label: branch.label,
+          value: branch.value,
+        }));
+        this.setState({branchData: branchArray});
+      })
+      .catch(error => console.error('Error fetching branch data:', error));
+  };
+
+  fetchJobData = () => {
+    const apiUrl = `https://mis.santukatransport.in/API/Test/GetJobDetails?JobNo=${this.state.input}`;
+    fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${this.state.base64Credentials}`,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => response.json())
+      .then(data => {
+        const jobArray = data?.data.map(job => ({
+          label: job.JobNo,
+          value: job.JobNo,
+        }));
+        this.setState({jobData: jobArray});
+      })
+      .catch(error => {
+        console.error('Error fetching job data:', error);
+      });
+  };
+
+  handleDropdownClint = selectedJob => {
+    clearTimeout(this.debounceTimeout); // Cancel any ongoing debounce
+    this.setState({
+      clintInput: selectedJob,
+      clientName: selectedJob,
+      showDropdown: false,
+    });
+
+    console.log('Selected Job:', selectedJob);
+  };
+
+  handleDropdownBranch = selectedJob => {
+    clearTimeout(this.debounceTimeout);
+    this.setState({
+      branchInput: selectedJob,
+      branchName: selectedJob,
+      showDropdown: false,
+    });
+
+    console.log('Selected Job:', selectedJob);
+  };
+
+  handleDropdownSelect = selectedJob => {
+    clearTimeout(this.debounceTimeout); // Cancel any ongoing debounce
+    this.setState({
+      input: selectedJob,
+      jobName: selectedJob,
+      showDropdown: false,
+    });
+
+    console.log('Selected Job:', selectedJob);
+  };
+
+  componentDidMount() {
+    this.loadData();
+    this.fetchJobData();
+    this.fetchBranchData();
+    this.fetchClintData();
   }
 
   loadData = () => {
@@ -80,14 +175,18 @@ export default class Report extends Component {
       clientName,
       jobName,
       selectedDate,
-      base64Credentials,
-      jobData,
+      username,
+      password,
     } = this.state;
+    const base64Credentials = encode(`${username}:${password}`);
+
     const headers = new Headers({
       Authorization: `Basic ${base64Credentials}`,
       'Content-Type': 'application/json',
     });
 
+    const startIndex = (currentPage - 1) * perPage;
+    const endIndex = startIndex + perPage;
     const formattedSelectedDate = `${selectedDate.getFullYear()}-${String(
       selectedDate.getMonth() + 1,
     ).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
@@ -98,14 +197,12 @@ export default class Report extends Component {
       apiUrl += `&GetClientDetails?ClientName=${clientName}`;
     }
 
-    if (jobName && jobData.length > 0) {
-      apiUrl += `&JobId=${jobData[0].JobId}&JobNo=${jobData[0].JobNo}`;
+    if (jobName) {
+      apiUrl += `&GetJobDetails?JobName=${jobName}`;
     }
-
     if (selectedDate) {
       apiUrl += `&selectedDate=${formattedSelectedDate}`;
     }
-
     fetch(apiUrl, {
       method: 'GET',
       headers: headers,
@@ -264,7 +361,7 @@ export default class Report extends Component {
             <td>${index + 1}</td>
             <td>${row['TruckNo'] !== undefined ? row['TruckNo'] : ''}</td>
             <td>${row['Challan'] !== undefined ? row['Challan'] : ''}</td>
-           
+            <td>${row['TPNo'] !== undefined ? row['TPNo'] : ''}</td>
             <td>${
               row['TareWT'] !== undefined ? row['TareWT'].toFixed(3) : ''
             }</td>
@@ -291,6 +388,7 @@ export default class Report extends Component {
                 ? row['Hsd'].toFixed(2)
                 : ''
             }</td>
+            <td>${row['Memo No'] !== undefined ? row['Memo No'] : ''}</td>
             <td>${row['Pump Name'] !== undefined ? row['Pump Name'] : ''}</td>
             <td>${row['Remarks'] !== undefined ? row['Remarks'] : ''}</td>
           </tr>
@@ -337,68 +435,9 @@ export default class Report extends Component {
       this.handleDateFilter();
     });
   };
+
   showDatePicker = () => {
     this.setState({showDatePicker: true});
-  };
-
-  componentDidMount() {
-    this.loadData();
-    this.fetchJobData();
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.input !== this.state.input) {
-      if (this.state.input) {
-        this.fetchJobData();
-      }
-    }
-  }
-
-  componentWillUnmount() {
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-    }
-  }
-
-  handleInputChange = input => {
-    console.log('Input changed:', input); // Log the new input value
-    this.setState({input});
-  };
-
-  fetchJobData = () => {
-    const apiUrl = `https://mis.santukatransport.in/API/Test/GetJobDetails?JobNo=${this.state.input}`;
-    fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        Authorization: `Basic ${this.state.base64Credentials}`,
-        'Content-Type': 'application/json',
-      },
-    })
-      .then(response => response.json())
-      .then(data => {
-        const jobArray = data?.data.map(job => ({
-          label: job.JobNo,
-          value: job.JobNo,
-        }));
-        this.setState({jobData: jobArray});
-        console.log(jobArray, 'job data');
-      })
-      .catch(error => {
-        console.error('Error fetching job data:', error);
-      });
-  };
-
-  // handleSearch = () => {
-  //   this.setState({jobName: this.state.inputValue});
-  //   this.fetchJobData();
-  // };
-
-  handleSearchTextChange = text => {
-    this.setState({searchText: text});
-    const filtered = this.state.jobData.filter(job =>
-      job.label.toLowerCase().includes(text.toLowerCase()),
-    );
-    this.setState({jobData: filtered});
   };
 
   render() {
@@ -413,24 +452,45 @@ export default class Report extends Component {
     return (
       <View style={styles.container}>
         <CustomDropdown
+          labelText="Client No"
+          dropData={this.state.clintData}
+          placeholdername="Select client Number"
+          searchPlaceholdername="Search client Number in dropdown"
+          showSearch={true}
+          value={this.state.clintInput}
+          onChangeText={text => this.setState({clintInput: text})}
+          // onChangeText={text => {
+          //   this.setState({clintInput: text});
+          //   console.log(`Clint No input: ${text}`); // log the input value to console
+          // }}
+          onSelect={this.handleDropdownClint}
+        />
+        <CustomDropdown
+          labelText="Branch No"
+          dropData={this.state.branchData}
+          placeholdername="Select Branch Number"
+          searchPlaceholdername="Search Branch Number in dropdown"
+          showSearch={true}
+          value={this.state.branchInput}
+          onChangeText={text => this.setState({branchInput: text})}
+          onSelect={this.handleDropdownBranch}
+        />
+        <CustomDropdown
           labelText="Job No"
           dropData={this.state.jobData}
           placeholdername="Select Job Number"
           searchPlaceholdername="Search Job Number in dropdown"
-          // value={this.state.inputValue}
-          // onChangeT={item => this.handleSelectJob(item.value)}
           showSearch={true}
           value={this.state.input}
-          onChangeText={this.handleInputChange}
-          // onSelect={selectedJob => this.setState({jobName: selectedJob.value})}
-          dropdownPosition="bottom"
+          onChangeText={text => this.setState({input: text})}
+          onSelect={this.handleDropdownSelect}
         />
-        {/* {this.renderJobList()} */}
         <TouchableOpacity onPress={this.showDatePicker}>
           <Text style={styles.dateText}>
             Selected Date: {moment(selectedDate).format('DD/MM/YYYY')}
           </Text>
         </TouchableOpacity>
+
         {showDatePicker && (
           <DateTimePicker
             testID="dateTimePicker"
@@ -452,6 +512,7 @@ export default class Report extends Component {
                     ++this.serialNumber,
                     rowData['TruckNo'] || '',
                     rowData['Challan'] || '',
+                    rowData['TPNo'] || '',
                     rowData['Loading Qty'] || '',
                     rowData['Unloading Qty'] || '',
                     rowData['Unloading Date']
@@ -460,6 +521,7 @@ export default class Report extends Component {
                     rowData['Cash'] || '',
                     rowData['E-Adv'] || '',
                     rowData['Hsd'] || '',
+                    rowData['Memo No'] || '',
                     rowData['Pump Name'] || '',
                     rowData['Remarks'] || '',
                   ]}
@@ -468,7 +530,7 @@ export default class Report extends Component {
                 />
               ))
             ) : (
-              <Text style={styles.data}>No data available</Text>
+              <Text>No data available</Text>
             )}
           </Table>
         </ScrollView>
@@ -487,6 +549,8 @@ export default class Report extends Component {
       </View>
     );
   }
+
+  
 }
 
 const styles = StyleSheet.create({
@@ -497,62 +561,8 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 40,
-    borderColor: '#b6ccf2',
-    borderWidth: 2,
-    borderRadius: 7,
-    marginBottom: 10,
-    paddingHorizontal: 8,
-    color: '#000',
-  },
-  searchInput: {
-    height: 40,
-    borderColor: '#b6ccf2',
-    borderWidth: 2,
-    borderRadius: 7,
-    marginBottom: 10,
-    paddingHorizontal: 8,
-    backgroundColor: '#fff',
-    color: '#000',
-  },
-  icon: {
-    borderWidth: 0.5,
-    width: 40,
-    height: 40,
-  },
-  modalContainer: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#000',
-  },
-  modalItem: {
-    fontSize: 16,
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-    color: '#000',
-  },
-  button: {
-    marginTop: -2,
-    fontSize: 16,
-    width: 380,
-    padding: 10,
-    backgroundColor: '#fff',
-    color: '#000',
-    borderRadius: 7,
+    borderColor: '#000',
     borderWidth: 1,
-    borderColor: '#b6ccf2',
-  },
-  scrol: {
-    height: 40,
-    borderColor: '#b6ccf2',
-    borderWidth: 2,
-    borderRadius: 7,
     marginBottom: 10,
     paddingHorizontal: 8,
     color: '#000',
@@ -562,27 +572,27 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#007BFF',
   },
-  data: {
-    fontSize: 20,
-    color: '#007BFF',
-  },
   tableBorder: {
     borderWidth: 1,
-    borderColor: '#bfd7ff',
+    borderColor: '#c8e1ff',
   },
   head: {
-    height: 50,
+    height: 70,
+    width: 900,
     backgroundColor: '#f1f8ff',
   },
   text: {
     margin: 6,
     color: '#000',
-    width: 100,
-    textAlign: 'center',
   },
   row: {
-    height: 30,
-    backgroundColor: '#fff',
+    height: 60,
+    width: 900,
+    textAlign: 'center',
+    justifyContent: 'center',
+    alignContent: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#FFFFFF',
   },
   pagination: {
     flexDirection: 'row',
@@ -594,27 +604,5 @@ const styles = StyleSheet.create({
   },
   paginationText: {
     fontSize: 16,
-  },
-  headerText1: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'black',
-    textAlign: 'center',
-  },
-  headerText2: {
-    fontSize: 16,
-    color: 'black',
-    textAlign: 'center',
-  },
-  border: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  dash: {
-    width: 10,
-    height: 3,
-    backgroundColor: '#000',
-    marginRight: 5,
-    marginTop: 5,
   },
 });
