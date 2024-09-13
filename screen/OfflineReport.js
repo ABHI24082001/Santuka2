@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import {StyleSheet, View, ScrollView, Text} from 'react-native';
 import {Table, Row} from 'react-native-table-component';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import AntDesign from 'react-native-vector-icons/AntDesign';
 export default class OfflineReport extends Component {
   constructor(props) {
     super(props);
@@ -54,6 +54,7 @@ export default class OfflineReport extends Component {
     return (
       <View style={styles.container}>
         <View style={styles.headerContainer}>
+          <AntDesign name="forward" size={30} color="#900" />
           <Text style={styles.headerText1}>SANTUKA TRANSPORT</Text>
           <Text style={styles.headerText2}>NIE, JAGATPUR, CUTTACK</Text>
         </View>

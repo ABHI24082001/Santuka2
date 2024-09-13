@@ -12,6 +12,10 @@ import moment from 'moment';
 import {encode} from 'base-64';
 import {Table, Row} from 'react-native-table-component';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+
+
+
 export default class Report extends Component {
   constructor(props) {
     super(props);
@@ -167,7 +171,6 @@ export default class Report extends Component {
   }
 
   loadData = () => {
-    this.serialNumber = 0;
     const {
       currentPage,
       perPage,
@@ -178,6 +181,7 @@ export default class Report extends Component {
       username,
       password,
     } = this.state;
+
     const base64Credentials = encode(`${username}:${password}`);
 
     const headers = new Headers({
@@ -185,50 +189,152 @@ export default class Report extends Component {
       'Content-Type': 'application/json',
     });
 
+    // Calculate pagination range
     const startIndex = (currentPage - 1) * perPage;
     const endIndex = startIndex + perPage;
-    const formattedSelectedDate = `${selectedDate.getFullYear()}-${String(
-      selectedDate.getMonth() + 1,
-    ).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
-    let apiUrl = `http://mis.santukatransport.in/API/Test/GetBranchDetails?BranchName=${branchName}`;
+    // Format the selected date for the API
+    const formattedSelectedDate = selectedDate
+      ? moment(selectedDate).format('YYYY-MM-DD')
+      : '';
 
+    // Build the API URL dynamically based on selected filters
+    let apiUrl = `https://mis.santukatransport.in/API/Test/GetData?`;
+
+    // Append query parameters based on selected filters
+    if (branchName) {
+      apiUrl += `BranchName=${branchName}&`;
+    }
     if (clientName) {
-      apiUrl += `&GetClientDetails?ClientName=${clientName}`;
+      apiUrl += `ClientName=${clientName}&`;
+    }
+    if (jobName) {
+      apiUrl += `JobNo=${jobName}&`;
+    }
+    if (formattedSelectedDate) {
+      apiUrl += `Date=${formattedSelectedDate}&`;
     }
 
-    if (jobName) {
-      apiUrl += `&GetJobDetails?JobName=${jobName}`;
+    // If no filters are selected, return early to avoid making unnecessary requests
+    if (!branchName && !clientName && !jobName && !formattedSelectedDate) {
+      console.log('No filters selected. Please select at least one filter.');
+      return;
     }
-    if (selectedDate) {
-      apiUrl += `&selectedDate=${formattedSelectedDate}`;
-    }
+
+    // Remove the trailing '&' from the API URL (if any)
+    apiUrl = apiUrl.endsWith('&') ? apiUrl.slice(0, -1) : apiUrl;
+
+    console.log('Final API URL:', apiUrl); // For debugging
+
+    // Fetch data from the API
     fetch(apiUrl, {
       method: 'GET',
       headers: headers,
     })
       .then(response => response.json())
       .then(data => {
-        const filteredData = data.data.filter(row => {
-          const originalLoadDate = new Date(row['LoadDate']);
-          const selectedDateFormatted = new Date(selectedDate);
-          const jobNameMatch = row['JobNo'] === jobData[0].JobNo;
-          return (
-            originalLoadDate.toDateString() ===
-              selectedDateFormatted.toDateString() && jobNameMatch
-          );
-        });
-        // Update the table data with the filtered data
-        this.setState({
-          tableData: filteredData,
-          dataAvailable: filteredData.length > 0,
-        });
+        // Check if data is available
+        if (data?.data && data.data.length > 0) {
+          // Process the table data and update state
+          const tableData = data.data.map(row => ({
+            TruckNo: row.TruckNo || '',
+            Challan: row.Challan || '',
+            TPNo: row.TPNo || '',
+            LoadingQty: row['Loading Qty'] || '',
+            UnloadingQty: row['Unloading Qty'] || '',
+            UnloadingDate: row['Unloading Date']
+              ? moment(row['Unloading Date']).format('DD-MM-YYYY')
+              : '',
+            Cash: row.Cash || '',
+            EAdv: row['E-Adv'] || '',
+            Hsd: row.Hsd || '',
+            MemoNo: row['Memo No'] || '',
+            PumpName: row['Pump Name'] || '',
+            Remarks: row.Remarks || '',
+          }));
+
+          // Set the table data in state
+          this.setState({
+            tableData: tableData.slice(startIndex, endIndex), // Paginated data
+            dataAvailable: true,
+          });
+        } else {
+          // If no data is available, update the state accordingly
+          this.setState({
+            tableData: [],
+            dataAvailable: false,
+          });
+        }
       })
       .catch(error => {
         console.error('Error fetching data:', error);
         this.setState({dataAvailable: false});
       });
   };
+
+  // loadData = () => {
+  //   this.serialNumber = 0;
+  //   const {
+  //     currentPage,
+  //     perPage,
+  //     branchName,
+  //     clientName,
+  //     jobName,
+  //     selectedDate,
+  //     username,
+  //     password,
+  //   } = this.state;
+  //   const base64Credentials = encode(`${username}:${password}`);
+
+  //   const headers = new Headers({
+  //     Authorization: `Basic ${base64Credentials}`,
+  //     'Content-Type': 'application/json',
+  //   });
+
+  //   const startIndex = (currentPage - 1) * perPage;
+  //   const endIndex = startIndex + perPage;
+  //   const formattedSelectedDate = `${selectedDate.getFullYear()}-${String(
+  //     selectedDate.getMonth() + 1,
+  //   ).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+
+  //   let apiUrl = `http://mis.santukatransport.in/API/Test/GetBranchDetails?BranchName=${branchName}`;
+
+  //   if (clientName) {
+  //     apiUrl += `&GetClientDetails?ClientName=${clientName}`;
+  //   }
+
+  //   if (jobName) {
+  //     apiUrl += `&GetJobDetails?JobName=${jobName}`;
+  //   }
+  //   if (selectedDate) {
+  //     apiUrl += `&selectedDate=${formattedSelectedDate}`;
+  //   }
+  //   fetch(apiUrl, {
+  //     method: 'GET',
+  //     headers: headers,
+  //   })
+  //     .then(response => response.json())
+  //     .then(data => {
+  //       const filteredData = data.data.filter(row => {
+  //         const originalLoadDate = new Date(row['LoadDate']);
+  //         const selectedDateFormatted = new Date(selectedDate);
+  //         const jobNameMatch = row['JobNo'] === jobData[0].JobNo;
+  //         return (
+  //           originalLoadDate.toDateString() ===
+  //             selectedDateFormatted.toDateString() && jobNameMatch
+  //         );
+  //       });
+  //       // Update the table data with the filtered data
+  //       this.setState({
+  //         tableData: filteredData,
+  //         dataAvailable: filteredData.length > 0,
+  //       });
+  //     })
+  //     .catch(error => {
+  //       console.error('Error fetching data:', error);
+  //       this.setState({dataAvailable: false});
+  //     });
+  // };
 
   loadNextPage = () => {
     this.setState(
@@ -526,7 +632,7 @@ export default class Report extends Component {
                     rowData['Remarks'] || '',
                   ]}
                   style={styles.row}
-                  textStyle={styles.text}
+                  textStyle={StyleSheet.flatten(styles.text)}
                 />
               ))
             ) : (
@@ -549,8 +655,6 @@ export default class Report extends Component {
       </View>
     );
   }
-
-  
 }
 
 const styles = StyleSheet.create({

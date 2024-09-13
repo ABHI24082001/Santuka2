@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {memo, useCallback, useEffect, useState} from 'react';
 import {
   View,
   TouchableOpacity,
@@ -55,10 +55,88 @@ const Dashboard = () => {
     navigation.navigate('OfflineReport');
   };
 
+
+
+  // reverse link lid
+
+  class ListNode {
+    constructor(value = 0, next = null){
+      this.value = value;
+      this.next = next;
+    }
+  }
+
+
+  function hasDuplicates(arr){
+    return new Set(arr).size !== arr.length;
+  }
+  console.log(hasDuplicates([1,2,3,4,5]))
+  console.log(hasDuplicates([1,2,2,3,4]))
+
+  function hasDuplicates(arr){
+    return new Set(arr).size !== arr.length;
+  }
+
+  function sumArray(arr){
+    return arr.reduce((acc, val) => acc + val,0)
+  }
+  console.log(sumArray([1,2,3,4,5]));
+
+  function findIndex(arr , value){
+    return arr.indexOf(value);
+  }
+
+
+  console.log(findIndex([10, 20, 30] , 20))
+
+
+
+  // function flattedArray(arr){
+  //   return arr.flat(Infinity);
+  // }
+
+  // console.log(flattedArray([1,[2,[3,[4]]]]))
+
+
+  // function findIndex (arr, vlaue){
+  //   return arr.indexOf(vlaue);
+  // }
+
+  // console.log(findIndex([10,20,30,],20))
+
+
+  function isEven(num){
+    return num % 2 === 0;
+  }
+
+  console.log(isEven(4));
+  console.log(isEven(5));
+
+  function findMax(arr){
+    return Math.max(...arr);
+  }
+
+  console.log(findMax([1,2,3,4,5]))
+
+  function reverseString(str){
+    return str.split('').reverse().join('');
+  }
+
+  console.log(reverseString("hello"))
+
+  function isPalindrome(str){
+    const reversed = str.split('').reverse().join('');
+    return str === reversed;
+  }
+
+  console.log(isPalindrome("racer"))
+  console.log(isPalindrome("hello"))
+
+  
   
 
- 
- 
+
+
   return (
     <View style={styles.container}>
       <View style={styles.row}>
